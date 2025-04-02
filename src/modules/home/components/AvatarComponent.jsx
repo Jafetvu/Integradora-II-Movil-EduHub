@@ -1,7 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import React from 'react';
 import { Avatar } from "@rneui/base";
-import { MaterialIcons } from '@expo/vector-icons';
 
 export default function AvatarComponent({ userName, description, profileImage }) {
   // Extraer iniciales del nombre
@@ -26,14 +25,20 @@ export default function AvatarComponent({ userName, description, profileImage })
 
   const initials = getInitials(userName);
 
+  // Si profileImage existe, se valida el prefijo para base64
+  const imageUri =
+    profileImage && !profileImage.startsWith("data:")
+      ? `data:image/png;base64,${profileImage}`
+      : profileImage;
+
   return (
     <View style={styles.container}>
       <View style={styles.avatarContainer}>
-        {profileImage ? (
+        {imageUri ? (
           <Avatar
             rounded
             size="large"
-            source={{ uri: profileImage }}
+            source={{ uri: imageUri }}
             containerStyle={styles.avatar}
           />
         ) : (

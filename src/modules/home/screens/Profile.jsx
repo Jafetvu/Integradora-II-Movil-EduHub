@@ -144,7 +144,7 @@ export default function Profile({ route, setIsLoggedIn }) {
       >
         {/* Header con avatar y botón de editar */}
         <View style={styles.headerContainer}>
-          <AvatarComponent userName={user.username} description={user.description} />
+          <AvatarComponent userName={user.username} description={user.description} profileImage={user.profileImage} />
           <View style={styles.editButtonContainer}>
             <TouchableOpacity 
               style={styles.editButton} 

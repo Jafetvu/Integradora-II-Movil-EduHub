@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-const API_URL = "http://192.168.61.144:8080/eduhub";  // Para dispositivo Android físico
+const API_URL = "http://192.168.100.200:8080/eduhub";  // Para dispositivo Android físico
 
 
 export const checkTokenExpiration = async () => {
@@ -134,7 +134,7 @@ export const getUserById = async (id) => {
     }
 
     const data = await response.json(); // Convertir la respuesta a JSON
-    console.log('Datos recibidos:', data);
+    //console.log('Datos recibidos:', data);
     return data; // Retornar los datos
   } catch (error) {
     console.error('Error al obtener los datos:', error);
