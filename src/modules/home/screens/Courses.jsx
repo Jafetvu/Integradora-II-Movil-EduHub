@@ -24,14 +24,17 @@ const Courses = ({ navigation }) => {
   const countActiveCourses = () => {
     return cursos.filter(
       (course) =>
-        course.enrollmentStatus === "Aceptado" || "En curso" && course.status !== "Finalizado"
+        course.enrollmentStatus === "Aceptado" &&
+        (course.status === "Empezado" || course.status === "Aprobado")
     ).length;
   };
+
   // Contar cursos finalizados
   const countFinishedCourses = () => {
     return cursos.filter(
       (course) =>
-        course.enrollmentStatus === "Completado" && course.status === "Finalizado"
+        course.enrollmentStatus === "Completado" ||
+        course.status === "Finalizado"
     ).length;
   };
 
@@ -141,7 +144,7 @@ const Courses = ({ navigation }) => {
                 onPress={() => setRefresh(!refresh)}
                 style={styles.reloadIcon}
               >
-                <Icon name="refresh" size={24} color="#6200ee" />
+                <Icon name="refresh" size={24} color="#AA39AD" />
               </TouchableOpacity>
             </View>
           </View>
@@ -263,6 +266,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
   },
+  title: {
+    fontSize: 24, 
+    fontWeight: "bold", 
+    color: "#AA39AD" 
+  },
   cajaMisCursos: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
@@ -282,8 +290,8 @@ const styles = StyleSheet.create({
   },
   reloadIcon: {
     padding: 10,
-    backgroundColor: "#F0E5FF",
-    borderRadius: 8,
+    borderRadius: 50,
+    backgroundColor: "rgba(170, 57, 173, 0.1)",
   },
   errorText: {
     fontSize: 18,
@@ -293,12 +301,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   sectionHeader: { flex: 1 },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#6A1B9A",
-    marginBottom: 4,
-  },
   subtitle: {
     fontSize: 16,
     color: "#757575",
@@ -316,7 +318,7 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   exploreButton: {
-    backgroundColor: "#6200ee",
+    backgroundColor: "#AA39AD",
     padding: 12,
     borderRadius: 8,
     marginTop: 16,

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { View, TouchableOpacity, StyleSheet, Alert, Text, ActivityIndicator } from "react-native";
+import { View, TouchableOpacity, StyleSheet, Text, ActivityIndicator } from "react-native";
 import { Input, Button } from "@rneui/themed";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import { updateUser } from "../../../config/authService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from "react-native-toast-message";
 
 const EditProfile = ({ onClose, userData, onUpdate, setIsLoggedIn }) => {
   const [username, setUsername] = useState(userData.username || "");
@@ -66,7 +67,13 @@ const EditProfile = ({ onClose, userData, onUpdate, setIsLoggedIn }) => {
       }
     } catch (error) {
       console.error("Error al seleccionar imagen:", error);
-      Alert.alert("Error", "No se pudo seleccionar la imagen.");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "No se pudo seleccionar la imagen",
+        visibilityTime: 3000,
+        position: "top",
+      });
     } finally {
       setLoadingImage(false);
     }
@@ -92,10 +99,22 @@ const EditProfile = ({ onClose, userData, onUpdate, setIsLoggedIn }) => {
 
       const userId = await AsyncStorage.getItem("userId");
       await updateUser(userId, updatedData);
-      Alert.alert("Éxito", "Perfil actualizado correctamente");
+      Toast.show({
+        type: "success",
+        text1: "Éxito",
+        text2: "Perfil actualizado correctamente",
+        visibilityTime: 3000,
+        position: "top",
+      });
 
       if (isCredentialsChanged) {
-        Alert.alert("Aviso", "Has cambiado tu username o correo. Deberás iniciar sesión nuevamente.");
+        Toast.show({
+          type: "info",
+          text1: "Aviso",
+          text2: "Has cambiado tu username o correo. Deberás iniciar sesión nuevamente",
+          visibilityTime: 3000,
+          position: "top",
+        });
         await AsyncStorage.removeItem("authToken");
         setIsLoggedIn(false);
       }
@@ -103,7 +122,13 @@ const EditProfile = ({ onClose, userData, onUpdate, setIsLoggedIn }) => {
       onClose();
       onUpdate(updatedData);
     } catch (error) {
-      Alert.alert("Error", error.message);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error.message,
+        visibilityTime: 3000,
+        position: "top",
+      });
       console.error("Error al actualizar el perfil:", error);
     } finally {
       setIsSubmitting(false);

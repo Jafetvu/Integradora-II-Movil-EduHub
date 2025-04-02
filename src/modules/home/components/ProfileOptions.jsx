@@ -1,23 +1,21 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons'; // Asegúrate de instalar esta librería
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const { width } = Dimensions.get('window');
 
-const ProfileOptions = ({onEditPassword, navigation}) => {
+const ProfileOptions = ({ onEditPassword, navigation }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Recursos</Text>
-
       <View style={styles.row}>
         <TouchableOpacity style={styles.square} onPress={onEditPassword}>
-          <Icon name="password" size={32} color="#6200ee" />
-          <Text style={styles.optionText}>EDITAR CONTRASEÑA</Text>
+          <Icon name="lock" size={32} color="#AA39AD" />
+          <Text style={styles.optionText}>Editar Contraseña</Text>
         </TouchableOpacity>
-
         <TouchableOpacity style={styles.square} onPress={() => navigation.navigate("Certificates")}>
-          <Icon name="assignment" size={32} color="#6200ee" />
-          <Text style={styles.optionText}>CERTIFICADOS</Text>
+          <Icon name="assignment" size={32} color="#AA39AD" />
+          <Text style={styles.optionText}>Certificados</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -26,27 +24,34 @@ const ProfileOptions = ({onEditPassword, navigation}) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    padding: 16,
     backgroundColor: "white",
+    borderRadius: 15,
+    padding: 20,
+    marginVertical: 10,
+    shadowColor: "#AA39AD",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 16, // Reduje el espacio antes de los botones
+    color: "#AA39AD",
+    marginBottom: 16,
+    textAlign: "center",
   },
   row: {
     flexDirection: "row",
-    justifyContent: "center", // Centra los botones en la fila
-    gap: 12, // Espaciado entre los botones (más juntos)
+    justifyContent: "space-around",
   },
   square: {
-    width: (width - 80) / 2, // Ajusté el tamaño para que se vean bien juntos
-    aspectRatio: 1, // Mantiene la proporción cuadrada
-    backgroundColor: "#fff",
+    width: (width - 80) / 2,
+    aspectRatio: 1,
+    backgroundColor: "#f9f9f9",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 8,
+    borderRadius: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -54,11 +59,11 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   optionText: {
+    marginTop: 8,
     fontSize: 14,
-    marginTop: 6, // Espacio más reducido entre el icono y el texto
     textAlign: "center",
+    color: "#333",
   },
 });
-
 
 export default ProfileOptions;

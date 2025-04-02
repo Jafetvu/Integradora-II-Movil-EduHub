@@ -23,8 +23,8 @@ const Home = ({ navigation }) => {
   const countActiveCourses = () => {
     return misCursos.filter(
       (course) =>
-        (course.enrollmentStatus === "Aceptado" || course.enrollmentStatus === "En curso") &&
-        course.status !== "Finalizado"
+        course.enrollmentStatus === "Aceptado" &&
+        (course.status === "Empezado" || course.status === "Aprobado")
     ).length;
   };
 

@@ -53,7 +53,7 @@ export default function AvatarComponent({ userName, description, profileImage })
         </Text>
         <Text 
           style={styles.description} 
-          numberOfLines={2} 
+          numberOfLines={1} 
           ellipsizeMode="tail"
         >
           {description ? description : "No hay descripción"}

@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -5,22 +6,29 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
-  Alert,
   ScrollView,
 } from "react-native";
-import { useState, useEffect } from "react";
-import {
-  getUserById,
-  requestFreeEnrollment,
-} from "../../../config/authService";
+import { getUserById, requestFreeEnrollment } from "../../../config/authService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MaterialIcons, FontAwesome, Ionicons } from "@expo/vector-icons";
+import Toast from "react-native-toast-message";
 
 export default function CourseDetails({ route, navigation }) {
   const { course } = route.params;
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const showToast = (type, text1, text2) => {
+    Toast.show({
+      type,
+      text1,
+      text2,
+      visibilityTime: 3000,
+      position: "top",
+      topOffset: 50,
+    });
+  };
 
   const handleInscribirse = async () => {
     if (course.precio > 0) {
@@ -35,13 +43,13 @@ export default function CourseDetails({ route, navigation }) {
         const result = await requestFreeEnrollment(course.id, studentId);
 
         if (result.success) {
-          Alert.alert("Éxito", result.message);
+          showToast("success", "Éxito", result.message);
         } else {
-          Alert.alert("Error", result.message);
+          showToast("error", "Error", result.message);
         }
       } catch (error) {
         console.error("Error en handleInscribirse:", error);
-        Alert.alert("Error", "Ocurrió un error al solicitar la inscripción.");
+        showToast("error", "Error", "Ocurrió un error al solicitar la inscripción.");
       }
     }
   };
@@ -76,9 +84,7 @@ export default function CourseDetails({ route, navigation }) {
     } else {
       // Si no existe profileImage, se muestra un placeholder con las iniciales.
       const initials = user
-        ? `${user.name?.charAt(0) || ""}${
-            user.surname?.charAt(0) || ""
-          }`.toUpperCase()
+        ? `${user.name?.charAt(0) || ""}${user.surname?.charAt(0) || ""}`.toUpperCase()
         : "NA";
       return (
         <View style={styles.profilePlaceholder}>
@@ -203,6 +209,7 @@ export default function CourseDetails({ route, navigation }) {
           {course.precio > 0 ? "PAGAR E INSCRIBIRME" : "INSCRIBIRME GRATIS"}
         </Text>
       </TouchableOpacity>
+      <Toast topOffset={50} />
     </ScrollView>
   );
 }
@@ -420,3 +427,4 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 });
+

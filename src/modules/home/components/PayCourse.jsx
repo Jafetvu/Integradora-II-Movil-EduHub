@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -5,12 +6,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
-  Alert,
   ScrollView,
   Linking,
   Platform,
 } from "react-native";
-import React, { useState, useEffect } from "react";
 import { getUserById, requestEnrollment } from "../../../config/authService";
 import { MaterialIcons, FontAwesome, Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
@@ -19,18 +18,31 @@ import * as MediaLibrary from "expo-media-library";
 import * as IntentLauncher from "expo-intent-launcher";
 import { jsPDF } from "jspdf";
 import "react-native-get-random-values";
-import { encode } from "base-64"; // Añadir este import
+import { encode } from "base-64";
 import { v4 as uuidv4 } from "uuid";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from "react-native-toast-message";
 
 export default function PayCourse({ route, navigation }) {
+  const { course } = route.params;
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
   const [uploadStatus, setUploadStatus] = useState(null);
-  const { course } = route.params;
+  const [pdfGenerated, setPdfGenerated] = useState(false);
+
+  const showToast = (type, text1, text2) => {
+    Toast.show({
+      type,
+      text1,
+      text2,
+      visibilityTime: 3000,
+      position: "top",
+      topOffset: 50,
+    });
+  };
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -41,6 +53,7 @@ export default function PayCourse({ route, navigation }) {
           setUser(userData);
         } catch (err) {
           setError(err.message);
+          showToast("error", "Error", err.message);
         } finally {
           setLoading(false);
         }
@@ -75,16 +88,11 @@ export default function PayCourse({ route, navigation }) {
       doc.setTextColor(80, 80, 80);
       doc.setFont("helvetica", "normal");
 
-      const yStart = 40;
-      let yPosition = yStart;
+      let yPosition = 40;
 
       // Sección de monto
       doc.setFontSize(14);
-      doc.text(
-        `Monto a pagar: $${course.precio.toFixed(2)} MXN`,
-        20,
-        yPosition
-      );
+      doc.text(`Monto a pagar: $${course.precio.toFixed(2)} MXN`, 20, yPosition);
       yPosition += 15;
 
       // Datos bancarios
@@ -119,45 +127,32 @@ export default function PayCourse({ route, navigation }) {
 
       // Generar PDF como base64
       const pdfBase64 = doc.output("datauristring").split(",")[1];
-
-      // Guardar PDF
       const pdfName = `Pago_EduHub_${referenceNumber}.pdf`;
       const pdfPath = `${FileSystem.documentDirectory}${pdfName}`;
 
       await FileSystem.writeAsStringAsync(pdfPath, pdfBase64, {
         encoding: FileSystem.EncodingType.Base64,
       });
-      // Obtener URI compatible con Android
       let pdfUri = pdfPath;
       if (Platform.OS === "android") {
         const contentUri = await FileSystem.getContentUriAsync(pdfPath);
         pdfUri = contentUri;
       }
-
-      // Verificar si el archivo existe
       const fileInfo = await FileSystem.getInfoAsync(pdfPath);
       if (!fileInfo.exists) {
         throw new Error("El archivo PDF no se generó correctamente");
       }
-
-      // Abrir PDF
       // Abrir PDF
       if (Platform.OS === "android") {
         try {
-          await IntentLauncher.startActivityAsync(
-            "android.intent.action.VIEW",
-            {
-              data: pdfUri,
-              flags: 1,
-              type: "application/pdf",
-            }
-          );
+          await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
+            data: pdfUri,
+            flags: 1,
+            type: "application/pdf",
+          });
         } catch (error) {
           if (error.message.includes("No Activity found")) {
-            Alert.alert(
-              "Error",
-              "No hay una aplicación para ver PDFs instalada. Instala un visor de PDFs como Adobe Acrobat o Google PDF Viewer"
-            );
+            showToast("error", "Error", "No hay una aplicación para ver PDFs instalada. Instala un visor de PDFs.");
           } else {
             throw error;
           }
@@ -165,9 +160,11 @@ export default function PayCourse({ route, navigation }) {
       } else {
         await Linking.openURL(pdfUri);
       }
+      setPdfGenerated(true);
+      showToast("success", "PDF generado", "El PDF de pago se generó correctamente.");
     } catch (error) {
       console.error("Error generando PDF:", error);
-      Alert.alert("Error", error.message || "No se pudo generar el PDF");
+      showToast("error", "Error", error.message || "No se pudo generar el PDF");
     }
   };
 
@@ -175,10 +172,7 @@ export default function PayCourse({ route, navigation }) {
     if (Platform.OS === "android") {
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          "Permisos requeridos",
-          "Necesitamos acceso a tus archivos para subir comprobantes"
-        );
+        showToast("error", "Permisos requeridos", "Necesitamos acceso a tus archivos para subir comprobantes");
         return false;
       }
     }
@@ -198,7 +192,6 @@ export default function PayCourse({ route, navigation }) {
 
       if (result.assets && result.assets[0]) {
         const file = result.assets[0];
-
         let accessibleUri = file.uri;
         if (Platform.OS === "android") {
           accessibleUri = await FileSystem.getContentUriAsync(file.uri);
@@ -217,17 +210,11 @@ export default function PayCourse({ route, navigation }) {
         } else {
           setFilePreview(null);
         }
-
-        await handleUploadAndOpen(
-          accessibleUri,
-          file.mimeType,
-          file.name,
-          file.size
-        );
+        await handleUploadAndOpen(accessibleUri, file.mimeType, file.name, file.size);
       }
     } catch (err) {
       console.error("Error al seleccionar documento:", err);
-      Alert.alert("Error", "No se pudo seleccionar el archivo");
+      showToast("error", "Error", "No se pudo seleccionar el archivo");
     }
   };
 
@@ -236,15 +223,17 @@ export default function PayCourse({ route, navigation }) {
       setUploadStatus("uploading");
       await new Promise((resolve) => setTimeout(resolve, 2000));
       setUploadStatus("success");
+      showToast("success", "Subida exitosa", "El archivo se subió correctamente");
     } catch (err) {
       console.error("Error en la subida:", err);
       setUploadStatus("error");
-      Alert.alert("Error", err.message || "No se pudo completar la subida");
+      showToast("error", "Error", err.message || "No se pudo completar la subida");
     }
   };
+
   const handleEnrollment = async () => {
     if (!selectedFile) {
-      Alert.alert("Error", "Debes seleccionar un comprobante");
+      showToast("error", "Error", "Debes seleccionar un comprobante");
       return;
     }
 
@@ -254,14 +243,15 @@ export default function PayCourse({ route, navigation }) {
       const result = await requestEnrollment(course.id, studentId, selectedFile);
 
       if (result.success) {
-        Alert.alert("Éxito", result.message, [
-          { text: "OK", onPress: () => navigation.goBack() }
-        ]);
+        showToast("success", "Éxito", result.message);
+        setTimeout(() => {
+          navigation.goBack();
+        }, 3000);
       } else {
         throw new Error(result.message);
       }
     } catch (error) {
-      Alert.alert("Error en pay course", error.message);
+      showToast("error", "Error en pay course", error.message);
       setUploadStatus("error");
     } finally {
       setUploadStatus(null);
@@ -281,10 +271,7 @@ export default function PayCourse({ route, navigation }) {
       }
     } catch (error) {
       console.error("Error al abrir documento:", error);
-      Alert.alert(
-        "Error",
-        "No se pudo abrir el archivo. Instale un visor de PDF."
-      );
+      showToast("error", "Error", "No se pudo abrir el archivo. Instale un visor de PDF.");
     }
   };
 
@@ -303,22 +290,25 @@ export default function PayCourse({ route, navigation }) {
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2) + " " + sizes[i]);
+    return (bytes / Math.pow(k, i)).toFixed(2) + " " + sizes[i];
   };
 
   const renderProfileImage = () => {
     if (user?.profileImage) {
+      let imageUri = user.profileImage;
+      // Si no tiene prefijo "data:", lo añadimos asumiendo formato PNG
+      if (!imageUri.startsWith("data:")) {
+        imageUri = `data:image/png;base64,${imageUri}`;
+      }
       return (
         <Image
-          source={{ uri: user.profileImage }}
+          source={{ uri: imageUri }}
           style={styles.profileImage}
         />
       );
     } else {
       const initials = user
-        ? `${user.name?.charAt(0) || ""}${
-            user.surname?.charAt(0) || ""
-          }`.toUpperCase()
+        ? `${user.name?.charAt(0) || ""}${user.surname?.charAt(0) || ""}`.toUpperCase()
         : "NA";
       return (
         <View style={styles.profilePlaceholder}>
@@ -499,8 +489,11 @@ export default function PayCourse({ route, navigation }) {
         style={[styles.button, uploadStatus, styles.buttonDisabled]}
         onPress={handleEnrollment}
       >
-        <Text style={styles.buttonText}>{uploadStatus ? "Procesando..." : "Confirmar inscripción"}</Text>
+        <Text style={styles.buttonText}>
+          {uploadStatus ? "Procesando..." : "Confirmar inscripción"}
+        </Text>
       </TouchableOpacity>
+      <Toast topOffset={50} />
     </ScrollView>
   );
 }
@@ -804,3 +797,4 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 });
+

@@ -1,53 +1,58 @@
-import React, { useState } from "react";
-import { View, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { Input, Button } from "@rneui/themed";
 import { Ionicons } from "@expo/vector-icons";
-import { verifyPassword, updateUser } from "../../../config/authService"; // Importa los métodos verifyPassword y updateUser
+import { verifyPassword, updateUser } from "../../../config/authService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from "react-native-toast-message";
 
 const EditPassword = ({ onClose, userEmail }) => {
-  // Estados para los campos del formulario
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
-  // Estado para deshabilitar el botón
   const [isButtonDisabled, setIsButtonDisabled] = useState(true);
 
-  // Validar campos cada vez que cambien
-  React.useEffect(() => {
+  // Estados para mostrar/ocultar contraseñas
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  useEffect(() => {
     const fields = [currentPassword, newPassword, confirmPassword];
     const isAnyFieldEmpty = fields.some((field) => field.trim() === "");
     setIsButtonDisabled(isAnyFieldEmpty);
   }, [currentPassword, newPassword, confirmPassword]);
 
-  // Función para manejar la actualización de la contraseña
+  const showToast = (type, text1, text2) => {
+    Toast.show({
+      type,
+      text1,
+      text2,
+      visibilityTime: 3000,
+      position: "top",
+      topOffset: 50,
+    });
+  };
+
   const handleUpdatePassword = async () => {
-    // Validar que la nueva contraseña y la confirmación coincidan
     if (newPassword !== confirmPassword) {
-      Alert.alert("Error", "Las contraseñas no coinciden");
+      showToast("error", "Error", "Las contraseñas no coinciden");
       return;
     }
 
-    // Verificar la contraseña actual
     const verifyResult = await verifyPassword(userEmail, currentPassword);
-
     if (!verifyResult.success) {
-      Alert.alert("Error", verifyResult.message || "Contraseña actual incorrecta");
+      showToast("error", "Error", verifyResult.message || "Contraseña actual incorrecta");
       return;
     }
 
-    // Obtener el ID del usuario desde AsyncStorage
     const userId = await AsyncStorage.getItem("userId");
-
-    // Si la contraseña actual es correcta, actualizar la contraseña usando updateUser
     try {
       await updateUser(userId, { password: newPassword });
-      Alert.alert("Éxito", "Contraseña actualizada correctamente", [
-        { text: "OK", onPress: () => onClose() }, // Cerrar el modal después de presionar "OK"
-      ]);
+      showToast("success", "Éxito", "Contraseña actualizada correctamente");
+      onClose();
     } catch (error) {
-      Alert.alert("Error", error.message || "Error al actualizar la contraseña");
+      showToast("error", "Error", error.message || "Error al actualizar la contraseña");
     }
   };
 
@@ -68,7 +73,16 @@ const EditPassword = ({ onClose, userEmail }) => {
           labelStyle={styles.label}
           inputStyle={styles.value}
           containerStyle={styles.field}
-          secureTextEntry
+          secureTextEntry={!showCurrent}
+          rightIcon={
+            <TouchableOpacity onPress={() => setShowCurrent(!showCurrent)}>
+              <Ionicons
+                name={showCurrent ? "eye" : "eye-off"}
+                size={20}
+                color="#AA39AD"
+              />
+            </TouchableOpacity>
+          }
         />
 
         {/* Campo: Nueva Contraseña */}
@@ -80,7 +94,16 @@ const EditPassword = ({ onClose, userEmail }) => {
           labelStyle={styles.label}
           inputStyle={styles.value}
           containerStyle={styles.field}
-          secureTextEntry
+          secureTextEntry={!showNew}
+          rightIcon={
+            <TouchableOpacity onPress={() => setShowNew(!showNew)}>
+              <Ionicons
+                name={showNew ? "eye" : "eye-off"}
+                size={20}
+                color="#AA39AD"
+              />
+            </TouchableOpacity>
+          }
         />
 
         {/* Campo: Confirmar Nueva Contraseña */}
@@ -92,7 +115,16 @@ const EditPassword = ({ onClose, userEmail }) => {
           labelStyle={styles.label}
           inputStyle={styles.value}
           containerStyle={styles.field}
-          secureTextEntry
+          secureTextEntry={!showConfirm}
+          rightIcon={
+            <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)}>
+              <Ionicons
+                name={showConfirm ? "eye" : "eye-off"}
+                size={20}
+                color="#AA39AD"
+              />
+            </TouchableOpacity>
+          }
         />
 
         {/* Botón para enviar el formulario */}
@@ -101,14 +133,13 @@ const EditPassword = ({ onClose, userEmail }) => {
           onPress={handleUpdatePassword}
           buttonStyle={styles.buttonLogin}
           titleStyle={styles.buttonText}
-          disabled={isButtonDisabled} // Deshabilitar el botón si algún campo está vacío
+          disabled={isButtonDisabled}
         />
       </View>
     </View>
   );
 };
 
-// Estilos
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "white",

@@ -189,9 +189,11 @@ export default function Profile({ route, setIsLoggedIn }) {
               labelStyle={styles.labelStyle}
               value={user.email || "No especificado"}
               inputContainerStyle={styles.inputContainerStyle}
-              inputStyle={styles.inputStyle}
+              inputStyle={[styles.inputStyle, { textAlign: "left", paddingLeft: 10 }]}
               editable={false}
               leftIcon={<Icon name="envelope" type="font-awesome" size={18} color="#AA39AD" />}
+              numberOfLines={1}
+              ellipsizeMode="tail"
             />
           </View>
         </View>
@@ -399,3 +401,4 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
 });
+
