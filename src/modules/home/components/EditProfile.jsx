@@ -1,79 +1,88 @@
 import React, { useState, useEffect } from "react";
-import { View, TouchableOpacity, StyleSheet, Text, ActivityIndicator } from "react-native";
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  Text,
+  ActivityIndicator,
+} from "react-native";
 import { Input, Button } from "@rneui/themed";
 import { Ionicons } from "@expo/vector-icons";
-import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
-import { updateUser } from "../../../config/authService";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system";
+import { updateUser, checkEmail } from "../../../config/authService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Toast from "react-native-toast-message";
+import Messages from "../../../kernel/components/Messages";
 
 const EditProfile = ({ onClose, userData, onUpdate, setIsLoggedIn }) => {
   const [username, setUsername] = useState(userData.username || "");
   const [nombre, setNombre] = useState(userData.name || "");
-  const [apellidos, setApellidos] = useState(`${userData.surname} ${userData.lastname}` || "");
+  const [apellidos, setApellidos] = useState(
+    `${userData.surname} ${userData.lastname}` || ""
+  );
   const [correo, setCorreo] = useState(userData.email || "");
   const [descripcion, setDescripcion] = useState(userData.description || "");
-  // Se guarda la imagen completa con prefijo (ejemplo: "data:image/jpeg;base64,...") como string
   const [selectedProfileImage, setSelectedProfileImage] = useState(null);
   const [loadingImage, setLoadingImage] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isButtonDisabled, setIsButtonDisabled] = useState(true);
   const [isCredentialsChanged, setIsCredentialsChanged] = useState(false);
+  const [messageData, setMessageData] = useState(null);
 
   useEffect(() => {
     const fields = [username, nombre, apellidos, correo, descripcion];
     const isAnyFieldEmpty = fields.some((field) => field.trim() === "");
     setIsButtonDisabled(isAnyFieldEmpty || loadingImage || isSubmitting);
 
-    if (username !== userData.username || correo !== userData.email) {
+    if (
+      username !== userData.username ||
+      correo.trim().toLowerCase() !== userData.email.trim().toLowerCase()
+    ) {
       setIsCredentialsChanged(true);
     } else {
       setIsCredentialsChanged(false);
     }
-  }, [username, nombre, apellidos, correo, descripcion, loadingImage, isSubmitting, userData]);
+  }, [
+    username,
+    nombre,
+    apellidos,
+    correo,
+    descripcion,
+    loadingImage,
+    isSubmitting,
+    userData,
+  ]);
+
+  const showMessage = (title, message, image = null) => {
+    setMessageData({ title, message, image });
+    setTimeout(() => setMessageData(null), 3000);
+  };
 
   const handleSelectImage = async () => {
     try {
-      // Se aceptan únicamente PNG, JPG/JPEG y WEBP
       const result = await DocumentPicker.getDocumentAsync({
         type: ["image/png", "image/jpeg", "image/webp"],
         copyToCacheDirectory: true,
       });
-      console.log("Resultado del DocumentPicker:", result);
-
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        console.log("Asset seleccionado:", asset);
-        const fileUri = asset.uri;
         setLoadingImage(true);
-        // Convertir la imagen a base64
-        const base64 = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.Base64 });
-        const base64String = base64.toString();
-        
-        // Determinar el prefijo según la extensión del archivo
+        const base64 = await FileSystem.readAsStringAsync(asset.uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
         let imagePrefix = "data:image/png;base64,";
         if (asset.name) {
-          const ext = asset.name.split('.').pop().toLowerCase();
+          const ext = asset.name.split(".").pop().toLowerCase();
           if (ext === "jpg" || ext === "jpeg") {
             imagePrefix = "data:image/jpeg;base64,";
           } else if (ext === "webp") {
             imagePrefix = "data:image/webp;base64,";
           }
         }
-        const completeImage = imagePrefix + base64String;
-        console.log("Imagen convertida a base64 (con prefijo):", completeImage);
-        setSelectedProfileImage(completeImage);
+        setSelectedProfileImage(imagePrefix + base64);
       }
     } catch (error) {
-      console.error("Error al seleccionar imagen:", error);
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: "No se pudo seleccionar la imagen",
-        visibilityTime: 3000,
-        position: "top",
-      });
+      showMessage("Error", "No se pudo seleccionar la imagen");
     } finally {
       setLoadingImage(false);
     }
@@ -82,6 +91,14 @@ const EditProfile = ({ onClose, userData, onUpdate, setIsLoggedIn }) => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
+      if (correo.trim().toLowerCase() !== userData.email.trim().toLowerCase()) {
+        const emailCheck = await checkEmail(correo);
+        if (emailCheck.status !== 200) {
+          showMessage("Error en el correo", emailCheck.message);
+          setIsSubmitting(false);
+          return;
+        }
+      }
       const [surname, lastname] = apellidos.split(" ");
       const updatedData = {
         username,
@@ -90,46 +107,22 @@ const EditProfile = ({ onClose, userData, onUpdate, setIsLoggedIn }) => {
         lastname,
         email: correo,
         description: descripcion,
-        // Se envía la imagen nueva en base64 si se seleccionó; de lo contrario se conserva la actual
         profileImage: selectedProfileImage || userData.profileImage || null,
       };
 
-      console.log("Valor de selectedProfileImage:", selectedProfileImage);
-      console.log("Datos actualizados a enviar:", updatedData);
-
       const userId = await AsyncStorage.getItem("userId");
       await updateUser(userId, updatedData);
-      Toast.show({
-        type: "success",
-        text1: "Éxito",
-        text2: "Perfil actualizado correctamente",
-        visibilityTime: 3000,
-        position: "top",
-      });
+      showMessage("Éxito", "Perfil actualizado correctamente");
 
       if (isCredentialsChanged) {
-        Toast.show({
-          type: "info",
-          text1: "Aviso",
-          text2: "Has cambiado tu username o correo. Deberás iniciar sesión nuevamente",
-          visibilityTime: 3000,
-          position: "top",
-        });
+        showMessage("Aviso", "Has cambiado tu username o correo. Deberás iniciar sesión nuevamente");
         await AsyncStorage.removeItem("authToken");
         setIsLoggedIn(false);
       }
-
       onClose();
       onUpdate(updatedData);
     } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: error.message,
-        visibilityTime: 3000,
-        position: "top",
-      });
-      console.error("Error al actualizar el perfil:", error);
+      showMessage("Error", error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -137,6 +130,15 @@ const EditProfile = ({ onClose, userData, onUpdate, setIsLoggedIn }) => {
 
   return (
     <View style={styles.container}>
+      {messageData && (
+        <View style={styles.messageContainer}>
+          <Messages
+            title={messageData.title}
+            message={messageData.message}
+            image={messageData.image}
+          />
+        </View>
+      )}
       <TouchableOpacity style={styles.closeButton} onPress={onClose}>
         <Ionicons name="close" size={24} color="#AA39AD" />
       </TouchableOpacity>
@@ -188,12 +190,19 @@ const EditProfile = ({ onClose, userData, onUpdate, setIsLoggedIn }) => {
           containerStyle={styles.field}
           multiline
         />
-        <TouchableOpacity style={styles.imagePickerButton} onPress={handleSelectImage}>
+        <TouchableOpacity
+          style={styles.imagePickerButton}
+          onPress={handleSelectImage}
+        >
           <Ionicons name="image" size={24} color="#fff" />
           <Text style={styles.imagePickerText}>Seleccionar Foto de Perfil</Text>
         </TouchableOpacity>
         {loadingImage && (
-          <ActivityIndicator size="small" color="#6200ee" style={{ marginBottom: 16 }} />
+          <ActivityIndicator
+            size="small"
+            color="#6200ee"
+            style={{ marginBottom: 16 }}
+          />
         )}
         {selectedProfileImage && !loadingImage && (
           <Text style={styles.successText}>Imagen cargada correctamente</Text>
@@ -217,6 +226,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     width: "90%",
     padding: 16,
+    alignSelf: "center",
+    marginVertical: 16,
   },
   container2: {
     padding: 16,
@@ -268,6 +279,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     marginBottom: 16,
+  },
+  messageContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 9999,
   },
 });
 

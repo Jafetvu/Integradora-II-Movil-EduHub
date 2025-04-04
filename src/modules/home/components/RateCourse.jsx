@@ -1,8 +1,9 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { rateCourse, checkTokenExpiration, logout } from '../../../config/authService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
 
 export default function RateCourse({ courseId }) {
   const [rating, setRating] = useState(0);
@@ -19,7 +20,11 @@ export default function RateCourse({ courseId }) {
 
   const handleSubmit = async () => {
     if (rating === 0) {
-      Alert.alert('Error', 'Por favor selecciona una calificación');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Por favor selecciona una calificación',
+      });
       return;
     }
 
@@ -29,7 +34,11 @@ export default function RateCourse({ courseId }) {
       const tokenValid = await checkTokenExpiration();
       if (!tokenValid) {
         await logout();
-        Alert.alert('Sesión expirada', 'Por favor inicia sesión nuevamente');
+        Toast.show({
+          type: 'error',
+          text1: 'Sesión expirada',
+          text2: 'Por favor inicia sesión nuevamente',
+        });
         return;
       }
       const userId = await AsyncStorage.getItem('userId');
@@ -37,7 +46,11 @@ export default function RateCourse({ courseId }) {
       const result = await rateCourse(courseId, rating, comment, userId);
       
       if (result.success) {
-        Alert.alert('Éxito', '¡Calificación enviada correctamente!');
+        Toast.show({
+          type: 'success',
+          text1: 'Éxito',
+          text2: '¡Calificación enviada correctamente!',
+        });
         setRating(0);
         setComment('');
         setHasRated(true);
@@ -46,7 +59,11 @@ export default function RateCourse({ courseId }) {
       }
     } catch (error) {
       console.error('Error:', error);
-      Alert.alert('Error', 'Error de conexión. Inténtalo de nuevo.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Error de conexión. Inténtalo de nuevo.',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -63,7 +80,11 @@ export default function RateCourse({ courseId }) {
       message = 'Curso no encontrado';
     }
     
-    Alert.alert('Error', message);
+    Toast.show({
+      type: 'error',
+      text1: 'Error',
+      text2: message,
+    });
     
     if (result.unauthorized) {
       logout();
@@ -121,6 +142,7 @@ export default function RateCourse({ courseId }) {
           {isSubmitting ? 'Enviando...' : 'Enviar Calificación'}
         </Text>
       </TouchableOpacity>
+      <Toast />
     </View>
   );
 }

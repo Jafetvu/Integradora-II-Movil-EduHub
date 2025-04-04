@@ -14,12 +14,14 @@ import { WebView } from "react-native-webview";
 import * as FileSystem from "expo-file-system";
 import * as IntentLauncher from "expo-intent-launcher";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Messages from "../../../kernel/components/Messages";
 
 const API_URL = "http://192.168.100.200:8080/eduhub/api/session";
 
 const SessionsCourse = ({ route, navigation }) => {
   const { session, courseTitle } = route.params;
   const [loadingFiles, setLoadingFiles] = useState({});
+  const [messageData, setMessageData] = useState(null);
 
   const getImageSource = (uri) => {
     if (!uri) return { uri: "https://via.placeholder.com/300" };
@@ -27,12 +29,16 @@ const SessionsCourse = ({ route, navigation }) => {
     return { uri: `data:image/jpeg;base64,${uri}` };
   };
 
+  const showMessage = (title, message, image = null) => {
+    setMessageData({ title, message, image });
+    setTimeout(() => setMessageData(null), 3000);
+  };
+
   const handleViewFile = async (file) => {
     try {
       setLoadingFiles((prev) => ({ ...prev, [file.id]: true }));
       const token = await AsyncStorage.getItem("authToken");
       let fileUri;
-      let fileData;
 
       if (!file.data) {
         // Archivo desde el servidor
@@ -99,15 +105,14 @@ const SessionsCourse = ({ route, navigation }) => {
   `;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContainer}
-    >
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContainer}>
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.courseTitle}>{courseTitle}</Text>
         <Text style={styles.sessionTitle}>{session.nameSession}</Text>
       </View>
 
+      {/* Contenido de la sesión */}
       {session.content && (
         <View style={styles.section}>
           <Text style={styles.sectionHeader}>Contenido de la sesión</Text>
@@ -124,6 +129,7 @@ const SessionsCourse = ({ route, navigation }) => {
         </View>
       )}
 
+      {/* Material multimedia */}
       {session.multimedia && session.multimedia.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionHeader}>Material multimedia</Text>
@@ -132,7 +138,6 @@ const SessionsCourse = ({ route, navigation }) => {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.mediaScrollContainer}
           >
-            
             {session.multimedia.map((media, index) => (
               <TouchableOpacity
                 key={`${media.id}-${index}`}
@@ -180,12 +185,21 @@ const SessionsCourse = ({ route, navigation }) => {
         </View>
       )}
 
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
+      {/* Botón para volver */}
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Text style={styles.backButtonText}>Volver a las sesiones</Text>
       </TouchableOpacity>
+
+      {/* Overlay para mensajes */}
+      {messageData && (
+        <View style={styles.messageOverlay}>
+          <Messages
+            title={messageData.title}
+            message={messageData.message}
+            image={messageData.image}
+          />
+        </View>
+      )}
     </ScrollView>
   );
 };
@@ -261,11 +275,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  mediaImage: {
-    width: "100%",
-    height: 120,
-    borderRadius: 8,
-  },
   mediaFile: {
     alignItems: "center",
     padding: 8,
@@ -315,6 +324,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#64748B",
     fontFamily: "Inter-Regular",
+  },
+  messageOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 9999,
   },
 });
 

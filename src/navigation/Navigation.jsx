@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Icon } from "@rneui/base";
 import LoginStack from "./stacks/LoginStack";
 import CreateAccountStack from "./stacks/CreateAccountStack";
+import ForgotPasswordStack from "./stacks/ForgotPasswordStack";
 
 const Tab = createBottomTabNavigator();
 
@@ -26,6 +27,7 @@ export default function Navigation({ setIsLoggedIn }) {
           {(props) => <LoginStack {...props} setIsLoggedIn={setIsLoggedIn} />}
         </Tab.Screen>
         <Tab.Screen name="CreateAccount" component={CreateAccountStack} options={{ title: 'Crear Cuenta' }} />
+        <Tab.Screen name="ForgotPassword" component={ForgotPasswordStack} options={{ title: 'Recuperar Contraseña' }} />
       </Tab.Navigator>
     </NavigationContainer>
   );

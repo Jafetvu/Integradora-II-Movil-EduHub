@@ -50,8 +50,6 @@ const StudentCourse = ({ route, navigation }) => {
     }
   }, [course?.id]);
 
-  
-
   const handleSessionPress = async (session, index) => {
     try {
       if (index === 0 || completedSessions.includes(index - 1)) {
@@ -436,27 +434,9 @@ const StudentCourse = ({ route, navigation }) => {
           <AntDesign name="arrowleft" size={20} color="#fff" />
           <Text style={styles.actionButtonText}>Volver</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, styles.continueButton]}
-          onPress={() =>
-            course.sessions?.length > 0 &&
-            handleSessionPress(course.sessions[0], 0)
-          }
-          disabled={
-            !course.sessions?.length || course.enrollmentStatus !== "Aceptado"
-          }
-        >
-          <FontAwesome name="play" size={16} color="#fff" />
-          <Text style={styles.actionButtonText}>
-            {completedSessions.length > 0 ? "Continuar" : "Comenzar"}
-          </Text>
-        </TouchableOpacity>
       </View>
 
-      {course.status === "Finalizado" && (
-        <RateCourse courseId={course.id} />
-      )}
+      {course.status === "Finalizado" && <RateCourse courseId={course.id} />}
     </ScrollView>
   );
 };

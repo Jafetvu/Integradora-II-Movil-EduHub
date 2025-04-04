@@ -67,9 +67,38 @@ export const login = async (user, password) => {
   }
 };
 
+export const forgotPassword = async (email) => {
+  try {
+    const response = await fetch(`${API_URL}/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    console.log("Código de estado:", response.status);
+    const text = await response.text();
+    const message = text || "Se ha enviado el correo de recuperación.";
+
+    // Consideramos éxito si el código es 200, 201 o 204
+    if (response.status === 200 || response.status === 201 || response.status === 204) {
+      return { success: true, message };
+    } else {
+      return { success: false, message };
+    }
+  } catch (error) {
+    console.error("Error en forgotPassword:", error);
+    return { success: false, message: "Error de conexión" };
+  }
+};
+
+
+
+
+
 export const logout = async () => {
   try {
     await AsyncStorage.removeItem("authToken");
+    await AsyncStorage.removeItem("userId");
     console.log("Token eliminado");
   } catch (error) {
     console.error("Error al eliminar el token:", error);
@@ -665,5 +694,23 @@ export const rateCourse = async (courseId, ratingValue, comment, userId) => {
       message: "Error de conexión",
       status: 500 
     };
+  }
+};
+
+export const getUserNotifications = async () => {
+  try {
+    const token = await AsyncStorage.getItem("authToken");
+    const response = await fetch(`${API_URL}/api/notifications`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error in getUserNotifications:", error);
+    throw error;
   }
 };

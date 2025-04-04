@@ -1,13 +1,14 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
-const SecondForgotPassword = () => {
+const SecondForgotPassword = ({ route, navigation }) => {
+  const { email } = route.params;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Un correo de verificación ha sido enviado a [correo], por favor, verifica la carpeta de spam</Text> 
+      <Text style={styles.title}>Un correo de verificación ha sido enviado a {email}, por favor, verifica la carpeta de spam</Text> 
 
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Login')}>
         <Text style={styles.buttonText}>Entendido</Text>
       </TouchableOpacity>
     </View>

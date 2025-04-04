@@ -9,7 +9,6 @@ export default function ForgotPasswordStack() {
     <Stack.Navigator>
       <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{title:"Recuperar contraseña"}} />
       <Stack.Screen name="SecondForgotPassword" component={SecondForgotPassword} options={{title:"Recuperar contraseña"}} />
-      <Stack.Screen name="Login" component={Login} options={{title:"Iniciar sesion"}} />
     </Stack.Navigator>
   )
 }
