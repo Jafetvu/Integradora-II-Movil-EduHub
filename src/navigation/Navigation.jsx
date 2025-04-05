@@ -27,7 +27,6 @@ export default function Navigation({ setIsLoggedIn }) {
           {(props) => <LoginStack {...props} setIsLoggedIn={setIsLoggedIn} />}
         </Tab.Screen>
         <Tab.Screen name="CreateAccount" component={CreateAccountStack} options={{ title: 'Crear Cuenta' }} />
-        <Tab.Screen name="ForgotPassword" component={ForgotPasswordStack} options={{ title: 'Recuperar Contraseña' }} />
       </Tab.Navigator>
     </NavigationContainer>
   );
