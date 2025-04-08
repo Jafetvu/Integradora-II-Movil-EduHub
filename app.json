@@ -4,7 +4,7 @@
     "slug": "edu-hub-movil",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/eduhub-icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/eduhub-icon.png",
@@ -19,7 +19,6 @@
         }
       ]
     ],
-
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -31,16 +30,29 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/eduhub-icon.png",
         "backgroundColor": "#ffffff"
       },
       "permissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/eduhub-icon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "37903f9e-1011-4a54-89a5-aad036f73f93"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/37903f9e-1011-4a54-89a5-aad036f73f93"
     }
   }
 }

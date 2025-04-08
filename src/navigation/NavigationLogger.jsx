@@ -40,7 +40,7 @@ export default function NavigationLogger({ setIsLoggedIn }) {
           {(props) => <Profile {...props} setIsLoggedIn={setIsLoggedIn} />}
         </Tab.Screen>
 
-        <Tab.Screen name="Alerts" component={Alerts} options={{ title: "Alertas" }} />
+        
 
         <Tab.Screen
           name="Certificates"

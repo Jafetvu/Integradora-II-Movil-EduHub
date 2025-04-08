@@ -15,8 +15,7 @@ import * as FileSystem from "expo-file-system";
 import * as IntentLauncher from "expo-intent-launcher";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Messages from "../../../kernel/components/Messages";
-
-const API_URL = "http://192.168.108.41:8080/eduhub/api/session";
+import { API_URL } from "../../../config/authService";
 
 const SessionsCourse = ({ route, navigation }) => {
   const { session, courseTitle } = route.params;
