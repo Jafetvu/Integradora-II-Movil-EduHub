@@ -32,6 +32,9 @@ const ContinueCreate = ({ route = {}, navigation }) => {
     if (!username.trim()) {
       newErrors.username = "El apodo es obligatorio";
       isValid = false;
+    } else if (username.trim().length < 3) {
+      newErrors.username = "El apodo debe tener más de 2 letras";
+      isValid = false;
     }
 
     if (!password.trim()) {

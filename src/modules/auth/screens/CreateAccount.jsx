@@ -25,16 +25,41 @@ const CreateAccount = ({ navigation }) => {
     let isValid = true;
     const newErrors = { name: "", fullSurname: "", email: "" };
 
+    // Regex para permitir solo letras (incluyendo tildes) y espacios
+    const lettersRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
+
+    // Validación para el nombre
     if (!name.trim()) {
       newErrors.name = "El nombre es obligatorio";
       isValid = false;
-    }
-
-    if (!fullSurname.trim()) {
-      newErrors.fullSurname = "Los apellidos son obligatorios";
+    } else if (!lettersRegex.test(name)) {
+      newErrors.name = "El nombre solo puede contener letras y espacios";
+      isValid = false;
+    } else if (name.replace(/\s+/g, "").length < 2) {
+      newErrors.name = "El nombre debe tener al menos 2 letras";
       isValid = false;
     }
 
+    // Validación para los apellidos
+    if (!fullSurname.trim()) {
+      newErrors.fullSurname = "Los apellidos son obligatorios";
+      isValid = false;
+    } else if (!lettersRegex.test(fullSurname)) {
+      newErrors.fullSurname = "Los apellidos solo pueden contener letras y espacios";
+      isValid = false;
+    } else {
+      // Verificar que cada palabra (apellido) tenga al menos 2 letras
+      const surnamesArr = fullSurname.trim().split(/\s+/);
+      for (let surname of surnamesArr) {
+        if (surname.length < 2) {
+          newErrors.fullSurname = "Cada apellido debe tener al menos 2 letras";
+          isValid = false;
+          break;
+        }
+      }
+    }
+
+    // Validación para el correo (sin cambios)
     if (!email.trim()) {
       newErrors.email = "El correo electrónico es obligatorio";
       isValid = false;

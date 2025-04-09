@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-const API_URL = "http://192.168.109.113:8080/eduhub";  // Para dispositivo Android físico
+const API_URL = "http://54.144.1.138:8080/eduhub";  // Para dispositivo Android físico
 
 
 export const checkTokenExpiration = async () => {

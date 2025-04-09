@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
   Platform,
   Alert,
@@ -15,6 +14,8 @@ import * as FileSystem from "expo-file-system";
 import * as IntentLauncher from "expo-intent-launcher";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Messages from "../../../kernel/components/Messages";
+import * as Sharing from "expo-sharing"; // Importamos expo-sharing
+
 import { API_URL } from "../../../config/authService";
 
 const SessionsCourse = ({ route, navigation }) => {
@@ -35,13 +36,12 @@ const SessionsCourse = ({ route, navigation }) => {
 
   const handleViewFile = async (file) => {
     try {
-      setLoadingFiles((prev) => ({ ...prev, [file.id]: true }));
+      setLoadingFiles((prev) => ({ ...prev, [file._id]: true }));
       const token = await AsyncStorage.getItem("authToken");
       let fileUri;
 
       if (!file.data) {
-        // Archivo desde el servidor
-        const downloadUrl = `${API_URL}/${session.id}/multimedia/${file.id}`;
+        const downloadUrl = `${API_URL}/api/courses/view-file/${file.gridFsId}`;
         const response = await FileSystem.downloadAsync(
           downloadUrl,
           `${FileSystem.cacheDirectory}${file.fileName}`,
@@ -49,7 +49,6 @@ const SessionsCourse = ({ route, navigation }) => {
         );
         fileUri = response.uri;
       } else {
-        // Archivo en base64
         const base64Data = file.data.split(",")[1] || file.data;
         fileUri = `${FileSystem.cacheDirectory}${file.fileName}`;
         await FileSystem.writeAsStringAsync(fileUri, base64Data, {
@@ -57,18 +56,28 @@ const SessionsCourse = ({ route, navigation }) => {
         });
       }
 
-      const contentUri = await FileSystem.getContentUriAsync(fileUri);
-
-      await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
-        data: contentUri,
-        flags: 1,
-        type: file.fileType,
-      });
+      if (Platform.OS === "android") {
+        const contentUri = await FileSystem.getContentUriAsync(fileUri);
+        await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
+          data: contentUri,
+          flags: 1,
+          type: file.fileType,
+        });
+      } else if (Platform.OS === "ios") {
+        // Usamos expo-sharing para iOS
+        const isAvailable = await Sharing.isAvailableAsync();
+        if (isAvailable) {
+          // Esto abrirá la hoja de compartir para visualizar o compartir el archivo
+          await Sharing.shareAsync(fileUri, { mimeType: file.fileType });
+        } else {
+          throw new Error("No se puede abrir el archivo en iOS");
+        }
+      }
     } catch (error) {
       console.error("Error:", error);
       Alert.alert("Error", `No se pudo abrir el archivo: ${error.message}`);
     } finally {
-      setLoadingFiles((prev) => ({ ...prev, [file.id]: false }));
+      setLoadingFiles((prev) => ({ ...prev, [file._id]: false }));
     }
   };
 
@@ -139,12 +148,12 @@ const SessionsCourse = ({ route, navigation }) => {
           >
             {session.multimedia.map((media, index) => (
               <TouchableOpacity
-                key={`${media.id}-${index}`}
+                key={`${media._id}-${index}`}
                 style={styles.mediaItem}
                 onPress={() => handleViewFile(media)}
-                disabled={loadingFiles[media.id]}
+                disabled={loadingFiles[media._id]}
               >
-                {loadingFiles[media.id] ? (
+                {loadingFiles[media._id] ? (
                   <View style={styles.loadingContainer}>
                     <ActivityIndicator size="small" color="#3B82F6" />
                     <Text style={styles.loadingText}>Cargando...</Text>
@@ -192,11 +201,7 @@ const SessionsCourse = ({ route, navigation }) => {
       {/* Overlay para mensajes */}
       {messageData && (
         <View style={styles.messageOverlay}>
-          <Messages
-            title={messageData.title}
-            message={messageData.message}
-            image={messageData.image}
-          />
+          <Messages title={messageData.title} message={messageData.message} image={messageData.image} />
         </View>
       )}
     </ScrollView>

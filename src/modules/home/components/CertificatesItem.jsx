@@ -10,61 +10,63 @@ const CertificatesItem = () => {
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Función que se encarga de cargar los certificados
+  const fetchCertificates = async () => {
+    setLoading(true);
+    try {
+      const studentId = await AsyncStorage.getItem('userId');
+      if (!studentId) throw new Error('Usuario no identificado');
+      
+      const courses = await getCourseByStudent(studentId);
+      const validCertificates = [];
+      
+      const getImageSource = (image) => {
+        if (!image) return 'https://i.ibb.co/6JBs9vG/cert-placeholder.png';
+        if (image.startsWith('http')) return image;
+        if (image.startsWith('data:image')) return image;
+        return `data:image/jpeg;base64,${image}`;
+      };
+      
+      courses.forEach(course => {
+        const enrollment = course.enrollments.find(
+          e => e.studentId?.toString() === studentId.toString()
+        );
+  
+        if (enrollment?.certificateDelivered && enrollment?.certificateFile) {
+          // Generar IDs únicos con fallback seguro
+          const courseId = course._id 
+            ? course._id 
+            : `temp-course-${Math.random().toString(36).substr(2, 9)}`;
+          
+          const enrollmentId = enrollment._id 
+            ? enrollment._id 
+            : `temp-enroll-${Math.random().toString(36).substr(2, 9)}`;
+          
+          validCertificates.push({
+            id: `cert-${courseId}-${enrollmentId}`, // Key único garantizado
+            titulo: course.titulo,
+            instructor: course.docenteId?.nombre || 'Instituto Certificador',
+            fecha: new Date(enrollment.updatedAt).toLocaleDateString('es-ES', {
+              day: '2-digit',
+              month: 'long',
+              year: 'numeric'
+            }),
+            imagen: getImageSource(course.coverImage),
+            pdfBase64: enrollment.certificateFile
+          });
+        }
+      });
+      
+      setCertificates(validCertificates);
+    } catch (error) {
+      Alert.alert('Error', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadCertificates = async () => {
-      try {
-        const studentId = await AsyncStorage.getItem('userId');
-        if (!studentId) throw new Error('Usuario no identificado');
-        
-        const courses = await getCourseByStudent(studentId);
-        const validCertificates = [];
-        
-        const getImageSource = (image) => {
-          if (!image) return 'https://i.ibb.co/6JBs9vG/cert-placeholder.png';
-          if (image.startsWith('http')) return image;
-          if (image.startsWith('data:image')) return image;
-          return `data:image/jpeg;base64,${image}`;
-        };
-        
-        courses.forEach(course => {
-          const enrollment = course.enrollments.find(
-            e => e.studentId?.toString() === studentId.toString()
-          );
-
-          if (enrollment?.certificateDelivered && enrollment?.certificateFile) {
-            // Generar IDs únicos con fallback seguro
-            const courseId = course._id 
-              ? course._id 
-              : `temp-course-${Math.random().toString(36).substr(2, 9)}`;
-            
-            const enrollmentId = enrollment._id 
-              ? enrollment._id 
-              : `temp-enroll-${Math.random().toString(36).substr(2, 9)}`;
-            
-            validCertificates.push({
-              id: `cert-${courseId}-${enrollmentId}`, // Key único garantizado
-              titulo: course.titulo,
-              instructor: course.docenteId?.nombre || 'Instituto Certificador',
-              fecha: new Date(enrollment.updatedAt).toLocaleDateString('es-ES', {
-                day: '2-digit',
-                month: 'long',
-                year: 'numeric'
-              }),
-              imagen: getImageSource(course.coverImage),
-              pdfBase64: enrollment.certificateFile
-            });
-          }
-        });
-        
-        setCertificates(validCertificates);
-      } catch (error) {
-        Alert.alert('Error', error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadCertificates();
+    fetchCertificates();
   }, []);
 
   const handleOpenPDF = async (base64Data) => {
@@ -75,7 +77,7 @@ const CertificatesItem = () => {
       await FileSystem.writeAsStringAsync(fileUri, base64Data, {
         encoding: FileSystem.EncodingType.Base64
       });
-
+  
       const contentUri = await FileSystem.getContentUriAsync(fileUri);
       await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
         data: contentUri,
@@ -105,50 +107,67 @@ const CertificatesItem = () => {
         <Text style={styles.emptySubtitle}>
           Completa los cursos y podrás descargar{'\n'}tus certificados aquí
         </Text>
+        <TouchableOpacity
+          onPress={fetchCertificates}
+          style={styles.reloadIcon}
+        >
+          <MaterialIcons name="refresh" size={24} color="#AA39AD" />
+        </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <FlatList
-      data={certificates}
-      contentContainerStyle={styles.listContainer}
-      keyExtractor={item => item.id}
-      renderItem={({ item }) => (
-        <View style={styles.card}>
-          <Image
-            source={{ uri: item.imagen }}
-            style={styles.courseImage}
-            resizeMode="cover"
-          />
-          
-          <View style={styles.content}>
-            <Text style={styles.courseTitle} numberOfLines={2}>{item.titulo}</Text>
+    <View style={{ flex: 1 }}>
+      {/* Botón de refresco en la parte superior derecha */}
+      <View style={styles.reloadContainer}>
+        <TouchableOpacity
+          onPress={fetchCertificates}
+          style={styles.reloadIcon}
+        >
+          <MaterialIcons name="refresh" size={24} color="#AA39AD" />
+        </TouchableOpacity>
+      </View>
+      <FlatList
+        data={certificates}
+        contentContainerStyle={styles.listContainer}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Image
+              source={{ uri: item.imagen }}
+              style={styles.courseImage}
+              resizeMode="cover"
+            />
             
-            <View style={styles.infoContainer}>
-              <View style={styles.infoBadge}>
-                <MaterialIcons name="verified" size={16} color="#10B981" />
-                <Text style={styles.infoText}>Certificado válido</Text>
+            <View style={styles.content}>
+              <Text style={styles.courseTitle} numberOfLines={2}>{item.titulo}</Text>
+              
+              <View style={styles.infoContainer}>
+                <View style={styles.infoBadge}>
+                  <MaterialIcons name="verified" size={16} color="#10B981" />
+                  <Text style={styles.infoText}>Certificado válido</Text>
+                </View>
+                <View style={styles.infoBadge}>
+                  <MaterialIcons name="person" size={16} color="#3B82F6" />
+                  <Text style={styles.infoText} numberOfLines={1}>{item.instructor}</Text>
+                </View>
               </View>
-              <View style={styles.infoBadge}>
-                <MaterialIcons name="person" size={16} color="#3B82F6" />
-                <Text style={styles.infoText} numberOfLines={1}>{item.instructor}</Text>
+  
+              <View style={styles.footer}>
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={() => handleOpenPDF(item.pdfBase64)}
+                >
+                  <MaterialIcons name="visibility" size={18} color="white" />
+                  <Text style={styles.buttonText}>Ver</Text>
+                </TouchableOpacity>
               </View>
-            </View>
-
-            <View style={styles.footer}>
-              <TouchableOpacity
-                style={styles.button}
-                onPress={() => handleOpenPDF(item.pdfBase64)}
-              >
-                <MaterialIcons name="visibility" size={18} color="white" />
-                <Text style={styles.buttonText}>Ver</Text>
-              </TouchableOpacity>
             </View>
           </View>
-        </View>
-      )}
-    />
+        )}
+      />
+    </View>
   );
 };
 
@@ -223,11 +242,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 8
   },
-  date: {
-    fontSize: 12,
-    color: '#64748B',
-    fontFamily: 'Inter-Regular'
-  },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -267,6 +281,17 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     textAlign: 'center',
     lineHeight: 20
+  },
+  reloadContainer: {
+    alignItems: 'flex-end',
+    padding: 16,
+    backgroundColor: '#F8FAFC',
+    marginTop: 20
+  },
+  reloadIcon: {
+    padding: 10,
+    borderRadius: 50,
+    backgroundColor: 'rgba(170, 57, 173, 0.1)'
   }
 });
 
